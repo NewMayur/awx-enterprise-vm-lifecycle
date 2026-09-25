@@ -1,0 +1,14 @@
+---
+- name: Deploy Virtual Machine
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Simulate VM Provisioning
+      ansible.builtin.debug:
+        msg: "Provisioning virtual machine with specifications: CPU={{ vm_cpu | default(2) }}, RAM={{ vm_ram_mb | default(4096) }}MB, Disk={{ vm_disk_gb | default(50) }}GB"
+    - name: Allocate Network IP
+      ansible.builtin.debug:
+        msg: "Assigning static IP to {{ inventory_hostname }}"
+    - name: Finalize VM Deployment
+      ansible.builtin.debug:
+        msg: "Virtual machine deployment successful for {{ inventory_hostname }}."

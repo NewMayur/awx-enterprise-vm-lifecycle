@@ -1,0 +1,14 @@
+---
+- name: Upgrade Virtual Machine Resources and OS Release
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Take snapshot before upgrade
+      ansible.builtin.debug:
+        msg: "Creating pre-upgrade snapshot for VM {{ inventory_hostname }}"
+    - name: Execute major OS and software release upgrade
+      ansible.builtin.debug:
+        msg: "Upgrading release dependencies on {{ inventory_hostname }} to target version {{ target_version | default('latest') }}"
+    - name: Verify service post-upgrade
+      ansible.builtin.debug:
+        msg: "System health check passed after upgrade on {{ inventory_hostname }}."

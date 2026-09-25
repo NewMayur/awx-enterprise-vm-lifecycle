@@ -1,0 +1,14 @@
+---
+- name: Decommission Virtual Machine
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Drain traffic and stop services
+      ansible.builtin.debug:
+        msg: "Draining traffic and stopping services on {{ inventory_hostname }}"
+    - name: Archive VM backup
+      ansible.builtin.debug:
+        msg: "Taking final archival snapshot of {{ inventory_hostname }} before teardown"
+    - name: Release network and storage resources
+      ansible.builtin.debug:
+        msg: "Releasing IP, unmounting datastore volumes, and terminating VM {{ inventory_hostname }}"

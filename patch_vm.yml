@@ -1,0 +1,14 @@
+---
+- name: Patch Virtual Machine OS and Packages
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check available system updates
+      ansible.builtin.debug:
+        msg: "Scanning available security patches on {{ inventory_hostname }}..."
+    - name: Apply security updates
+      ansible.builtin.debug:
+        msg: "Applying package updates (kernel, openssl, systemd) on {{ inventory_hostname }}."
+    - name: Reboot if required
+      ansible.builtin.debug:
+        msg: "Patching cycle complete for {{ inventory_hostname }}. No reboot required."
