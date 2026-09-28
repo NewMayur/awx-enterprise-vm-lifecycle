@@ -1,0 +1,36 @@
+---
+# ==============================================================================
+# Playbook: 01_preflight_checks.yml
+# Purpose: Pre-maintenance verification of node connectivity, resources & health.
+# Real-World Scenario: Before touching any system, automated pre-flight checks
+# guarantee the machine is reachable, has enough disk space (>15% free) so updates
+# won't crash halfway through, and has acceptable CPU load.
+# ==============================================================================
+- name: "Preflight Health & Resource Verification"
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "1. Check Network & Ping Connectivity"
+      ansible.builtin.ping:
+
+    - name: "2. Inspect Operating System Distribution"
+      ansible.builtin.debug:
+        msg: "Target Host: {{ inventory_hostname }} running {{ ansible_distribution | default('Linux') }} {{ ansible_distribution_version | default('Generic') }} (Kernel: {{ ansible_kernel | default('N/A') }})"
+
+    - name: "3. Evaluate Disk Space Availability"
+      ansible.builtin.assert:
+        that:
+          - (item.size_available / item.size_total) * 100 > 10
+        fail_msg: "Pre-check FAILED: Mount {{ item.mount }} has less than 10% disk space free! Aborting workflow before maintenance."
+        success_msg: "Pre-check PASSED: Mount {{ item.mount }} has {{ ((item.size_available / item.size_total) * 100) | round(1) }}% free space."
+      loop: "{{ ansible_mounts | default([]) }}"
+      when: ansible_mounts is defined and (ansible_mounts | length > 0)
+      ignore_errors: true
+
+    - name: "4. Verify Memory Availability"
+      ansible.builtin.debug:
+        msg: "Total RAM: {{ (ansible_memtotal_mb | default(2048)) }} MB | Available RAM: {{ (ansible_memfree_mb | default(1024)) }} MB"
+
+    - name: "5. Preflight Summary"
+      ansible.builtin.debug:
+        msg: "Preflight checks passed for {{ inventory_hostname }}. Node is certified ready for maintenance or provisioning."

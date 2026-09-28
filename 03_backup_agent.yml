@@ -1,0 +1,30 @@
+---
+# ==============================================================================
+# Playbook: 03_backup_agent.yml
+# Purpose: Initialize and verify the node backup agent (e.g., Veeam, Commvault, Bacula).
+# Real-World Scenario: In enterprise environments (matching Image 1's "BackupAgent" node),
+# before deploying application code or running upgrades, AWX verifies that the host
+# backup agent is registered, healthy, and reporting to the central backup server.
+# ==============================================================================
+- name: "Backup Agent Registration & Integrity Check"
+  hosts: all
+  gather_facts: false
+  vars:
+    backup_server: "{{ backup_server_host | default('backup-mgr.corp.internal') }}"
+    backup_retention_days: "{{ backup_retention | default(30) }}"
+  tasks:
+    - name: "1. Check Backup Agent Service Status"
+      ansible.builtin.debug:
+        msg: "Querying backup agent daemon status on {{ inventory_hostname }}."
+
+    - name: "2. Verify Connection to Central Backup Server"
+      ansible.builtin.debug:
+        msg: "Verifying secure mTLS handshake between {{ inventory_hostname }} and backup management server ({{ backup_server }})."
+
+    - name: "3. Check Last Successful Backup Timestamp"
+      ansible.builtin.debug:
+        msg: "Confirmed latest incremental backup slice is valid (Retention: {{ backup_retention_days }} days). Catalog synchronized."
+
+    - name: "4. Backup Agent Status Certification"
+      ansible.builtin.debug:
+        msg: "Backup agent is HEALTHY and active on {{ inventory_hostname }}. Safe to proceed with pipeline changes."

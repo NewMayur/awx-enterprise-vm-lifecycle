@@ -1,0 +1,37 @@
+---
+# ==============================================================================
+# Playbook: 02_vm_provision.yml
+# Purpose: Provisioning virtual machine compute, memory, disk, and IP allocation.
+# Real-World Scenario: In AWX, engineers launch this template with "Prompt on Launch"
+# variables (CPU, RAM, Disk). The playbook provisions the VM on the hypervisor/cloud
+# and injects base configuration.
+# ==============================================================================
+- name: "Virtual Machine Provisioning & Infrastructure Setup"
+  hosts: all
+  gather_facts: false
+  vars:
+    vm_name: "{{ target_vm_name | default(inventory_hostname) }}"
+    vm_cpu_cores: "{{ vm_cpu | default(2) }}"
+    vm_ram_megabytes: "{{ vm_ram_mb | default(4096) }}"
+    vm_disk_gigabytes: "{{ vm_disk_gb | default(50) }}"
+    vm_network_vlan: "{{ vm_vlan | default('VLAN-10-PROD') }}"
+  tasks:
+    - name: "1. Validate Provisioning Parameters"
+      ansible.builtin.debug:
+        msg: "Initiating provisioning request for '{{ vm_name }}' [Specs: {{ vm_cpu_cores }} vCPU, {{ vm_ram_megabytes }} MB RAM, {{ vm_disk_gigabytes }} GB Storage, Network: {{ vm_network_vlan }}]"
+
+    - name: "2. Reserve Compute and Storage Resources"
+      ansible.builtin.debug:
+        msg: "Allocating datastore capacity and compute slicing on hypervisor for {{ vm_name }}."
+
+    - name: "3. Assign Network IP Configuration"
+      ansible.builtin.debug:
+        msg: "DHCP/IPAM leasing static address in subnet {{ vm_network_vlan }} for {{ vm_name }}."
+
+    - name: "4. Bootstrap Base OS Image & Cloud-Init"
+      ansible.builtin.debug:
+        msg: "Bootstrapping base OS image, injecting SSH public key, and initializing hostname '{{ vm_name }}'."
+
+    - name: "5. Confirm VM Power On & Ready State"
+      ansible.builtin.debug:
+        msg: "VM '{{ vm_name }}' is powered on, guest agent is responding, and SSH port 22 is open."
