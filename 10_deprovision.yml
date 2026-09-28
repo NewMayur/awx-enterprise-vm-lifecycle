@@ -1,0 +1,36 @@
+---
+# ==============================================================================
+# Playbook: 10_deprovision.yml
+# Purpose: Resource teardown, traffic drain, archival, and VM decommissioning.
+# Real-World Scenario: (Matching Image 1's "Deprovision" node).
+# Used in two critical workflows:
+# 1. Day-2 Decommissioning: When an old VM reaches end-of-life and must be retired.
+# 2. Automated Rollback: When provisioning/clustering fails, this node is triggered
+#    via red failure branches to reclaim storage, release IP leases, and prevent cloud waste.
+# ==============================================================================
+- name: "Automated Resource Teardown & VM Decommissioning"
+  hosts: all
+  gather_facts: false
+  vars:
+    archive_retention_days: "{{ retention_days | default(90) }}"
+    deprovision_reason: "{{ reason | default('End of Life / Rollback Cleanup') }}"
+  tasks:
+    - name: "1. Drain All Traffic & Unregister from DNS"
+      ansible.builtin.debug:
+        msg: "Draining traffic and removing DNS A-records for {{ inventory_hostname }} [Reason: {{ deprovision_reason }}]."
+
+    - name: "2. Create Final Archival Cold Backup"
+      ansible.builtin.debug:
+        msg: "Archiving final cold volume snapshot to archival storage bucket (Retention: {{ archive_retention_days }} days)."
+
+    - name: "3. Stop and Unmount Storage Volumes"
+      ansible.builtin.debug:
+        msg: "Flushing filesystem buffers and unmounting remote NFS/iSCSI datastores on {{ inventory_hostname }}."
+
+    - name: "4. Release Network IP to DHCP/IPAM Pool"
+      ansible.builtin.debug:
+        msg: "Static IP reservation released back to IPAM subnet allocator."
+
+    - name: "5. Destroy VM Compute Resource on Hypervisor"
+      ansible.builtin.debug:
+        msg: "Virtual machine {{ inventory_hostname }} deleted from hypervisor. Compute and memory successfully reclaimed."

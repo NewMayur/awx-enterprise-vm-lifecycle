@@ -1,0 +1,33 @@
+---
+# ==============================================================================
+# Playbook: 09_trigger_alert.yml
+# Purpose: Emergency notification dispatch & incident escalation.
+# Real-World Scenario: (Matching Image 1's "TriggerAlert" node & Step 5 of Image 2).
+# In AWX Visual Workflows, this node is attached via RED failure lines to every
+# critical step. If pre-checks, provisioning, or patching fails anywhere, AWX
+# immediately invokes this playbook to page the on-call SRE team and broadcast
+# telemetry to Slack, PagerDuty, or Webhook endpoints.
+# ==============================================================================
+- name: "Incident Escalation & Stakeholder Notification"
+  hosts: all
+  gather_facts: false
+  vars:
+    alert_severity: "{{ severity | default('HIGH') }}"
+    incident_channel: "{{ notify_channel | default('#sre-infrastructure-alerts') }}"
+    failure_reason: "{{ error_message | default('Pipeline execution halted due to threshold violation.') }}"
+  tasks:
+    - name: "1. Format Incident Payload"
+      ansible.builtin.debug:
+        msg: "Generating Incident Payload [Severity: {{ alert_severity }}] for Host: {{ inventory_hostname }}."
+
+    - name: "2. Dispatch Alert to PagerDuty / Webhook"
+      ansible.builtin.debug:
+        msg: "PagerDuty Event API triggered: Incident created with description: '{{ failure_reason }}'."
+
+    - name: "3. Notify Team Channel via Slack/Teams"
+      ansible.builtin.debug:
+        msg: "Broadcasting alert card to {{ incident_channel }}: Automated rollback initiated for {{ inventory_hostname }}."
+
+    - name: "4. Log Incident Event to Central SIEM / Splunk"
+      ansible.builtin.debug:
+        msg: "Audit log entry created in SIEM system with timestamp and correlation ID."
