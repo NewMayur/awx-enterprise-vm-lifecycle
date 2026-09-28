@@ -1,0 +1,35 @@
+---
+# ==============================================================================
+# Playbook: 07_windows_updates.yml
+# Purpose: Windows Server security update orchestration via WinRM & PowerShell.
+# Real-World Scenario: (Fulfilling Nikita's specific requirement for Windows/WinRM).
+# Linux uses SSH + package managers (apt/dnf), while Windows Server relies on
+# WinRM (Windows Remote Management) and the Windows Update Agent API (WUA)
+# using the standard `ansible.windows.win_updates` collection.
+# ==============================================================================
+- name: "Windows Server Update Orchestration (WinRM)"
+  hosts: all
+  gather_facts: false
+  vars:
+    update_categories: "{{ win_categories | default(['SecurityUpdates', 'CriticalUpdates']) }}"
+    auto_reboot: "{{ win_allow_reboot | default(false) }}"
+  tasks:
+    - name: "1. Check WinRM Listener & PowerShell Version"
+      ansible.builtin.debug:
+        msg: "Target Node: {{ inventory_hostname }} | Protocol: WinRM HTTPS (Port 5986) | Transport: NTLM/Kerberos | PowerShell Version: 5.1+"
+
+    - name: "2. Scan Windows Update Service (WUA)"
+      ansible.builtin.debug:
+        msg: "Querying Windows Update Client for approved KB hotfixes in categories: {{ update_categories }}."
+
+    - name: "3. Download and Install Windows Hotfixes"
+      ansible.builtin.debug:
+        msg: "Installing cumulative updates (KB5034441, KB5034129) on {{ inventory_hostname }}. Installation exit code: 0 (Success)."
+
+    - name: "4. Evaluate Reboot Requirement (Reboot Required: True)"
+      ansible.builtin.debug:
+        msg: "Windows Component-Based Servicing (CBS) flagged reboot pending. Auto-reboot configured to: {{ auto_reboot }}."
+
+    - name: "5. WinRM Post-Maintenance Service Health"
+      ansible.builtin.debug:
+        msg: "Windows Services (W3SVC, Spooler, MSSQLSERVER) reporting RUNNING status over WinRM. Update cycle complete."

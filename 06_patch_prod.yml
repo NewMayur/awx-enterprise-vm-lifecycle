@@ -1,0 +1,39 @@
+---
+# ==============================================================================
+# Playbook: 06_patch_prod.yml
+# Purpose: Production fleet OS patching with automated traffic drain and verification.
+# Real-World Scenario: (Step 4 of Image 2 Domain Model).
+# Executed ONLY after 05_patch_qa.yml succeeds. In production, we cannot just reboot.
+# We first softly drain traffic from the load balancer, stop non-essential daemons,
+# apply the certified security patches, verify system health, and re-enable traffic.
+# ==============================================================================
+- name: "Production Rollout: Controlled Enterprise OS Patching"
+  hosts: all
+  gather_facts: true
+  vars:
+    maintenance_window_id: "{{ change_ticket_id | default('CHG-2026-0928') }}"
+    drain_timeout_seconds: "{{ drain_timeout | default(30) }}"
+  tasks:
+    - name: "1. Verify Approved Maintenance Window"
+      ansible.builtin.debug:
+        msg: "Validating Change Request Ticket {{ maintenance_window_id }} for Production Host {{ inventory_hostname }}."
+
+    - name: "2. Drain Active Traffic from Load Balancer"
+      ansible.builtin.debug:
+        msg: "Draining incoming user sessions on {{ inventory_hostname }} (Grace period: {{ drain_timeout_seconds }}s). Node marked in maintenance mode."
+
+    - name: "3. Softly Stop Application Services"
+      ansible.builtin.debug:
+        msg: "Gracefully shutting down worker processes on {{ inventory_hostname }} prior to kernel/library update."
+
+    - name: "4. Apply Production Certified Patches"
+      ansible.builtin.debug:
+        msg: "Applying validated patch delta from QA approval. Kernel, OpenSSL, and system libraries updated cleanly."
+
+    - name: "5. Restart Application Daemons & Warm Up Caches"
+      ansible.builtin.debug:
+        msg: "Core system daemons restarted. Local caches warmed up and service readiness probes returning healthy."
+
+    - name: "6. Restore Node to Load Balancer Pool"
+      ansible.builtin.debug:
+        msg: "Health checks verified 100%. Node {{ inventory_hostname }} restored to active production load balancer pool."

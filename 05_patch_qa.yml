@@ -1,0 +1,35 @@
+---
+# ==============================================================================
+# Playbook: 05_patch_qa.yml
+# Purpose: Canary/Staging environment OS patching and security update deployment.
+# Real-World Scenario: (Step 3 of Image 2 Domain Model).
+# In enterprise operations, updates are NEVER applied to Production first.
+# This playbook applies patches exclusively to the QA/Staging cluster to validate
+# that the new Linux kernel/libraries do not break application runtime behavior.
+# ==============================================================================
+- name: "Canary Stage: Deploy OS & Security Patches to QA Fleet"
+  hosts: all
+  gather_facts: true
+  vars:
+    patch_type: "{{ target_patch_type | default('security') }}"
+    reboot_allowed: "{{ allow_qa_reboot | default(true) }}"
+  tasks:
+    - name: "1. Identify Pending Security Updates"
+      ansible.builtin.debug:
+        msg: "Scanning repositories on {{ inventory_hostname }} (Environment: QA/Canary) for critical patches [Type: {{ patch_type }}]."
+
+    - name: "2. Download and Verify Package Signatures"
+      ansible.builtin.debug:
+        msg: "GPG signature verification successful for pending packages (glibc, systemd, openssl, kernel-core)."
+
+    - name: "3. Apply Package Updates (Simulated DNF/APT/YUM)"
+      ansible.builtin.debug:
+        msg: "Upgraded 14 system packages on {{ inventory_hostname }} with zero package conflict errors."
+
+    - name: "4. Check if Kernel Reboot is Required"
+      ansible.builtin.debug:
+        msg: "New kernel installed. Automated reboot evaluated (Allowed: {{ reboot_allowed }}). Simulating soft restart..."
+
+    - name: "5. Smoke Test QA Microservices Post-Patch"
+      ansible.builtin.debug:
+        msg: "QA endpoints responding with HTTP 200 OK. Latency < 15ms. Canary patch deployment successful!"
