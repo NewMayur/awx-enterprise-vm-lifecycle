@@ -6,6 +6,7 @@
 # In enterprise operations, updates are NEVER applied to Production first.
 # This playbook applies patches exclusively to the QA/Staging cluster to validate
 # that the new Linux kernel/libraries do not break application runtime behavior.
+# Includes an automated failure simulation switch to test AWX Red Rollback Branches.
 # ==============================================================================
 - name: "Canary Stage: Deploy OS & Security Patches to QA Fleet"
   hosts: all
@@ -13,6 +14,7 @@
   vars:
     patch_type: "{{ target_patch_type | default('security') }}"
     reboot_allowed: "{{ allow_qa_reboot | default(true) }}"
+    simulate_failure: "{{ simulate_patch_failure | default(false) }}"
   tasks:
     - name: "1. Identify Pending Security Updates"
       ansible.builtin.debug:
@@ -22,14 +24,21 @@
       ansible.builtin.debug:
         msg: "GPG signature verification successful for pending packages (glibc, systemd, openssl, kernel-core)."
 
-    - name: "3. Apply Package Updates (Simulated DNF/APT/YUM)"
+    - name: "3. Evaluate Patch Integrity & Simulation Switch"
+      ansible.builtin.assert:
+        that:
+          - not simulate_failure
+        fail_msg: "CRITICAL ALERT: Package checksum mismatch or broken dependency detected on QA node {{ inventory_hostname }}! Aborting rollout to prevent production outage."
+        success_msg: "Package integrity validated successfully on {{ inventory_hostname }}."
+
+    - name: "4. Apply Package Updates (Simulated DNF/APT/YUM)"
       ansible.builtin.debug:
         msg: "Upgraded 14 system packages on {{ inventory_hostname }} with zero package conflict errors."
 
-    - name: "4. Check if Kernel Reboot is Required"
+    - name: "5. Check if Kernel Reboot is Required"
       ansible.builtin.debug:
         msg: "New kernel installed. Automated reboot evaluated (Allowed: {{ reboot_allowed }}). Simulating soft restart..."
 
-    - name: "5. Smoke Test QA Microservices Post-Patch"
+    - name: "6. Smoke Test QA Microservices Post-Patch"
       ansible.builtin.debug:
         msg: "QA endpoints responding with HTTP 200 OK. Latency < 15ms. Canary patch deployment successful!"
